@@ -13,17 +13,17 @@ public class StockServiceImpl implements StockService {
 
     private final StockRepository stockRepository;
 
+    @Transactional
     @Override
     public void decrease(Long id, Long quantity) {
         // Stock 조회
         // 재고 감소
         // 갱신된 값을 저장
-        Stock stock = stockRepository.findById(id)
-                .orElseThrow();
+        Stock stock = stockRepository.findById(id).orElseThrow();
 
         stock.decrease(quantity);
 
 //        stockRepository.saveAndFlush(stock);
-        stockRepository.save(stock);
+        stockRepository.saveAndFlush(stock);
     }
 }
