@@ -3,10 +3,7 @@ package com.example.stock.domain;
 import lombok.Builder;
 import lombok.NoArgsConstructor;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import javax.persistence.*;
 
 @Entity
 @NoArgsConstructor
@@ -19,6 +16,9 @@ public class Stock {
     private Long productId; // 상품 id
 
     private Long quantity;  // 수량
+
+    @Version
+    private Long version;   // 버전 (Optimistic Lock을 위한 필드)
 
     @Builder
     public Stock(Long id, Long productId, Long quantity) {
