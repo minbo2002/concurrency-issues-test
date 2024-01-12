@@ -9,4 +9,6 @@ public interface StockService {
     void decreaseWithPessimisticLock(Long id, Long quantity);
 
     void decreaseWithOptimisticLock(Long id, Long quantity);
+
+    void decreaseWithNamedLock(Long id, Long quantity);
 }
