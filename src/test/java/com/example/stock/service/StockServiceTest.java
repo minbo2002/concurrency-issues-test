@@ -4,6 +4,7 @@ import com.example.stock.domain.Stock;
 import com.example.stock.facade.LettuceLockStockFacade;
 import com.example.stock.facade.NamedLockStockFacade;
 import com.example.stock.facade.OptimisticLockStockFacade;
+import com.example.stock.facade.RedissonLockStockFacade;
 import com.example.stock.repository.StockRepository;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,20 +22,17 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 @SpringBootTest
 class StockServiceTest {
 
-    @Autowired
-    private StockService stockService;
+    @Autowired private StockService stockService;
 
-    @Autowired
-    private OptimisticLockStockFacade optimisticLockStockFacade;
+    @Autowired private OptimisticLockStockFacade optimisticLockStockFacade;
 
-    @Autowired
-    private NamedLockStockFacade namedLockStockFacade;
+    @Autowired private NamedLockStockFacade namedLockStockFacade;
 
-    @Autowired
-    private LettuceLockStockFacade lettuceLockStockFacade;
+    @Autowired private LettuceLockStockFacade lettuceLockStockFacade;
 
-    @Autowired
-    private StockRepository stockRepository;
+    @Autowired private StockRepository stockRepository;
+
+    @Autowired private RedissonLockStockFacade redissonLockStockFacade;
 
     // 테스트 케이스 시작 전 더미데이터 생성
     @BeforeEach
@@ -212,10 +210,37 @@ class StockServiceTest {
         for(int i=0; i<threadCount; i++) {
             executorService.submit(() -> {
                 try {
-                    lettuceLockStockFacade.decrease(1L, 1L);  // 상품의 수량 1개 감소
+                    lettuceLockStockFacade.decreaseWithLettuceLockFacade(1L, 1L);  // 상품의 수량 1개 감소
 
                 } catch(InterruptedException e) {
                     throw new RuntimeException(e);
+
+                } finally {
+                    latch.countDown();  // latch.countDown() : latch 숫자 1개씩 감소
+                }
+            });
+        }
+
+        latch.await();  // latch.await() : latch의 숫자가 0이 될때까지 대기.  즉 모든 요청이 완료될때까지 대기
+
+        Stock stock = stockRepository.findById(1L).orElseThrow();  // 100 -(1*100) = 0 예상
+
+        assertEquals(0, stock.getQuantity());
+    }
+
+    @Test
+    @DisplayName("Redisson을 활용한 재고 100개 동시 감소 요청 테스트")
+    public void decreaseStockWithRedisson() throws InterruptedException {
+
+        int threadCount = 100;  // 쓰레드 개수 100개
+
+        ExecutorService executorService = Executors.newFixedThreadPool(32);
+        CountDownLatch latch = new CountDownLatch(threadCount);  // latch 숫자 100개
+
+        for(int i=0; i<threadCount; i++) {
+            executorService.submit(() -> {
+                try {
+                    redissonLockStockFacade.decreaseWithRedissonLockFacade(1L, 1L);  // 상품의 수량 1개 감소
 
                 } finally {
                     latch.countDown();  // latch.countDown() : latch 숫자 1개씩 감소

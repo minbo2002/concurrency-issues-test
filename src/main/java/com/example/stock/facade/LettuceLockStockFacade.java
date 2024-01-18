@@ -12,7 +12,7 @@ public class LettuceLockStockFacade {
     private final RedisLockRepository redisLockRepository;
     private final StockService stockService;
 
-    public void decrease(Long id, Long quantity) throws InterruptedException {
+    public void decreaseWithLettuceLockFacade(Long id, Long quantity) throws InterruptedException {
         while (!redisLockRepository.lock(id)) {  // lock 획득에 실패하면
             Thread.sleep(100);  // 0.1초 텀을두고 lock 획득 재시도 (redis 부하 줄일수 있음)
         }

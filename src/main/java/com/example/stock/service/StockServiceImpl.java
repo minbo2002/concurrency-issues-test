@@ -85,4 +85,17 @@ public class StockServiceImpl implements StockService {
         stockRepository.saveAndFlush(stock);
     }
 
+    @Transactional
+    @Override
+    public void decreaseWithRedissonLock(Long id, Long quantity) {
+        // Stock 조회
+        Stock stock = stockRepository.findById(id).orElseThrow();
+
+        // 재고 감소
+        stock.decrease(quantity);
+
+        // 갱신된 값을 저장
+        stockRepository.saveAndFlush(stock);
+    }
+
 }
